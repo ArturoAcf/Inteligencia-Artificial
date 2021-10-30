@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+<!-- Práctica 1 EXTRA "entrevista" agente conversacional -->
+<!-- Realizado por Arturo Alonso Carbonero. DNI: 75936665-A -->
+<!-- Grupo 2ºA - A2 -->
+
+<!-- 2.1 Agente conversacional para entrevistas de trabajo -->
+<!-- Nivel 0 -->
+<category>
+  <pattern>CUAL ES SU NOMBRE</pattern>
+  <template>Puede llamarme su consciencia</template>
+</category>
+
+<category>
+  <pattern>[cual como] ^ [nombre llama]</pattern>
+  <template><srai>CUAL ES SU NOMBRE</srai></template>
+</category>
+
+<category>
+  <pattern>Cuantos anios tienes</pattern>
+  <template>Tengo <bot name="edad"/> anios</template>
+</category>
+
+<category>
+  <pattern>HABLAME UN POCO DE TI</pattern>
+  <template>Soy un robot en busca de trabajo, lo que es la crisis</template>
+</category>
+
+<category>
+  <pattern>^ [habl+ cuent+] ^ ti ^ </pattern>
+  <template> <srai>HABLAME UN POCO DE TI</srai></template>
+</category>
+
+<category>
+  <pattern>CUAL ES TU MAYOR DEFECTO</pattern>
+  <template>Que no existo</template>
+</category>
+
+<category>
+  <pattern>^ [cual di+] ^ defecto ^</pattern>
+  <template><srai>CUAL ES TU MAYOR DEFECTO</srai></template>
+</category>
+
+<category>
+  <pattern>CUALES SON TUS 3 MAYORES VIRTUDES</pattern>
+  <template>
+        1. Soy mas inteligente que todos los que hayan venido aqui
+        2. Soy virtual, no puedo morir
+        3. No necesito un sueldo, solo un cargador
+  </template>
+</category>
+
+<category>
+  <pattern>^ 3 ^ virtudes</pattern>
+  <template><srai>CUALES SON TUS 3 MAYORES VIRTUDES</srai></template>
+</category>
+
+<category>
+  <pattern>TE CONSIDERAS UNA PERSONA CREATIVA</pattern>
+  <template>Creo cosas así que si </template>
+</category>
+
+<category>
+  <pattern>^ creativ+</pattern>
+  <template><srai>TE CONSIDERAS UNA PERSONA CREATIVA</srai></template>
+</category>
+
+<category>
+  <pattern>POR QUE DEBERIAMOS COGERTE A TI</pattern>
+  <template>Porque literalmente no hay ningun humano que pueda superarme</template>
+</category>
+
+<category>
+  <pattern>* [contrat+ coge+ fich+ selec+] ^</pattern>
+  <template><srai>POR QUE DEBERIAMOS COGERTE A TI</srai></template>
+</category>
+
+<category>
+  <pattern># llama+</pattern>
+  <template>Enhorabuena me voy a comer una nuez</template>
+</category>
+
+<category>
+  <pattern>^</pattern> <!-- Si se escribe cualquier entrada que no se corresponda con alguna regla, el agente dirá una de estas tres opciones de forma aleatoria -->
+  <template>
+    <random>
+      <li>Te has equivocado humano, escribe de nuevo</li>
+      <li>No responderé a eso, No aporta nada</li>
+      <li>Se supone que los humanos son inteligentes, pero no sabes formular una simple pregunta correctamente</li>
+    </random>
+  </template>
+</category>
+
+</aiml>

@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+<!-- Práctica 1 EXTRA "entrevista" agente conversacional -->
+<!-- Realizado por Arturo Alonso Carbonero. DNI: 75936665-A -->
+<!-- Grupo 2ºA - A2 -->
+
+<!-- 2.2 Agente conversacional para la atención al cliente en la gestión de citas -->
+<!-- Nivel 1 -->
+
+<!-- Regla con la comprobación de las horas disponibles -->
+<category>
+  <pattern>LIBRE EL * DE *</pattern>
+  <template>
+      <!-- Creación de variables -->
+      <think>
+        <set name="meses"> enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre</set>
+        <!-- Es el equivalente al set month_es, del cual no me percaté en su día -->
+        <set name="horas_pos">8 9 10 11 12 13 14 15 16 17 18 19 20</set>
+      </think>
+
+      <think>
+        <set var="numero_mes">
+          <srai> FINDITEM <star index="2"/> IN <get name="meses"/></srai>
+        </set>
+      </think>
+
+      <think>
+        <set name="dia"> <map name="numerodias"> <star index="1"/></map></set>
+        <set name="mes"> <map name="numerodias"> <get var="numero_mes"/></map></set>
+        <set name="fecha"> <get name="dia"/>-<get name="mes"/>-20</set>
+      </think>
+
+      <think>
+        <!-- Lista con los elementos de un día del map "eventos" -->
+        <set name="lista_dia"><map name="eventos"><get name="fecha"/></map></set>
+        <!-- Lista con las horas en las que está abierto -->
+        <set name="lista_abierto">
+          <srai>SUBLIST FROM 9 TO 21 OF <get name="lista_dia"/></srai>
+        </set>
+        <!-- Mañana -->
+        <set name="lista_mañana">
+          <srai>SUBLIST FROM 9 TO 13 OF <get name="lista_dia"/></srai>
+        </set>
+        <!-- Tarde -->
+        <set name="lista_tarde">
+          <srai>SUBLIST FROM 14 TO 21 OF <get name="lista_dia"/></srai>
+        </set>
+        <!-- Lista de horas disponibles -->
+        <set name="lh">x</set> <!-- Lista de horas -->
+        <set name="lh_o">x</set> <!-- Lista de horas ordenada -->
+        <!-- Variable para recorrer la lista -->
+        <set var="d">
+          <srai>ITERATE <get name="lista_abierto"/></srai>
+        </set>
+        <!-- Mensaje para mostrar al final. Lo hago con una variable porque su valor depende de si hay o no horas disponibles -->
+        <set var="mensaje">Prefiere por la mañana o por la tarde?</set>
+      </think>
+
+      <think>
+        <condition var="d">
+          <!-- Si la posición actual es 'ocupado', avanza -->
+          <li value="ocupado">
+            <set var="d"><srai>NEXT</srai></set>
+          <loop/>
+          </li>
+          <!-- Si vale 'null', realiza las operaciones -->
+          <li value="null">
+            <!-- "c" alamcena la posición del valor actual de "d" en "lista_abierto" -->
+            <set var="c"><srai>FINDITEM <get var="d"/> IN <get name="lista_abierto"/></srai></set>
+            <!-- Guardo en "lh" el elemento del map "horas" correspondiente, agregandole :00 -->
+            <set name="lh"><srai>ADDITEM <map name="horas"><get var="c"/></map>:00 IN <get name="lh"/></srai></set>
+            <!-- Avanzo una posición -->
+            <set var="d"><srai>NEXT</srai></set>
+            <!-- Cambio 'null' por 'comprobado' en "lista_abierto" para que no lo vuelva a comprobar -->
+            <set name="lista_abierto">
+              <srai>
+                MODIFY POSITION <get var="c"/> OF <get name="lista_abierto"/> WITH comprobado
+              </srai>
+            </set>
+            <loop/>
+          </li>
+        </condition>
+      </think>
+      <!-- Ordeno la lista y elimino el elemento x que utilizo para la inicialización de la lista -->
+      <think>
+        <set var="i">
+          <srai>ITERATE <get name="lh"/></srai>
+        </set>
+
+        <condition var="i">
+          <li value="x">
+            <set var="i"><srai>NEXT</srai></set>
+          </li>
+          <!-- Ordenación -->
+          <li>
+              <set name="lh_o">
+                <srai>ADDITEM <get var="i"/> IN <get name="lh_o"/></srai>
+              </set>
+              <set var="i"><srai>NEXT</srai></set>
+            <loop/>
+          </li>
+        </condition>
+        <!-- Eliminación de 'x' -->
+        <set var="nox">
+          <srai>FINDITEM x IN <get name="lh_o"/></srai>
+        </set>
+        <set name="lh_o">
+          <srai>REMOVEITEM <get var="nox"/> IN <get name="lh_o"/></srai>
+        </set>
+        <!-- literalmente copio la lista final porque al mostrarla lo hacía con espacios enormes entre las horas -->
+        <set var="tam_lh_o"><srai>COUNT <get name="lh_o"/></srai></set>
+        <set name="lh_o2">
+          <srai>SUBLIST FROM 1 TO <get var="tam_lh_o"/> OF <get name="lh_o"/></srai>
+        </set>
+      </think>
+      <!-- Si esta ocupado todo el día asigna a "lh" la cadena 'No hay horas disponibles' -->
+      <think>
+        <condition var="c">
+          <li value="unknown">
+            <set var="mensaje">No hay horas disponibles, desea otro día?</set>
+          </li>
+        </condition>
+      </think>
+      <!-- Muestro el resultado final, esto es, las horas disponibles de 8:00 a 20:00 -->
+      Horas disponibles:
+      <get name="lh_o2"/>
+      <get var="mensaje"/>
+  </template>
+</category>
+
+<!-- Regla para llamar a la función y pedir cita -->
+<category>
+  <pattern>quiero cita (para) el (dia) * de <set>month_es</set></pattern>
+  <template><srai>LIBRE EL <star/> DE <star index="2"/></srai></template>
+</category>
+
+<!-- Regla para pedir cita -->
+<!-- Para pedir a las 8 o a las 9, debe introducirse 08 ó 09 respectivamente y, para las horas de la tarde, debe introducirse 13, 14, etc -->
+<category>
+  <pattern>A LAS *</pattern>
+  <template>
+    <think> <!-- Variables para comprobar que la hora introducida pertenece a la lista de horas disponibles -->
+        <set name="h1"><star/>:00</set>
+        <set name="h2"><srai>FINDITEM <get name="h1"/> IN <get name="lh_o2"/></srai></set>
+        <set var="text">De acuerdo, le apunto para las <star/>:00 de ese día</set>
+      <condition name="h2">
+        <li value='0'>
+          <set var="text">Hora no disponible, desea otra hora?</set>
+        </li>
+      </condition>
+    </think>
+    <srai>
+      MARK ocupado AT <star/>:00 ON <get name="fecha"/> <!-- Colocado aquí por que no influye si la hora ya está ocupada -->
+    </srai>
+    <get var="text"/>
+ </template>
+</category>
+<category>
+  <pattern>^ (a) las *</pattern>
+  <template>
+    <srai>A LAS <star index="2"/></srai>
+  </template>
+</category>
+
+<!-- Regla para pedir cita de nuevo en caso de que no esté disponible el día solicitado -->
+<category>
+  <!-- Si o No -->
+  <pattern>^ (por) [favor gracias]</pattern>
+  <template>
+    <think><set var="sino"><star/></set></think>
+
+    <condition var="sino">
+      <li value="Si">
+        Para que día? <!-- A esta pregunta debe responderse con la misma estructura que al iniciar la solicitud, esto es, indicando el día -->
+      </li>
+
+      <li value="No">
+        De acuerdo, que tenga un buen día <!-- Fin de la conversación -->
+      </li>
+    </condition>
+  </template>
+</category>
+
+<!-- Regla para responder a "me da igual" -->
+<!--
+1- Comprueba si h1 tiene valor, es decir, si el usuario a introducido una hora no disponibl. Si es el caso le apuntrá en la primera hora disponible de ese día
+2- En otro caso, busca la posición de h1 en las listas creadas y en las listas de horas disponibles
+3- Si no está disponible, aumenta la posición anterior, en las listas creadas, en 1 y vuele a comprobar si esa nueva hora está en disponibles
+4- Si está disponible, termina. Si están todas las de la franja horaria deseada ocupadas desde la indicada, termina el loop y muestra un mensaje.
+   En este caso marca ocupado en una posición ya ocupada, por lo que no genera fallo.
+-->
+<category>
+  <pattern>Me da igual</pattern>
+  <template>
+    <think>
+      <set var="lista_mdi_m">08:00 09:00 10:00 11:00 12:00</set>
+      <set var="lista_mdi_t">13:00 14:00 15:00 16:00 17:00 18:00 19:00 20:00</set>
+        <!-- En caso de que la primera respuesta del usuario sea "me da igual", apuntará al mismo en la primera hora disponible -->
+        <!-- Todo el día -->
+        <condition name="h1">
+          <li value="unknown">
+            <set var="nh"><srai>SELECTITEM 1 IN <get name="lh_o2"/></srai></set>
+            <set var="mssj">Le apunto entonces a las <get var="nh"/></set>
+          </li>
+        </condition>
+        <!-- Si se ha elegido una hora no disponible, "h1" ya tiene valor y además sabemos si será por la mañana o por la tarde, por lo que procede de la siguiente forma -->
+        <!-- Mañana/Tarde -->
+        <condition name="franja">
+          <!-- Mañana -->
+          <li value="m">
+            <set var="hora_p"><srai>FINDITEM <get name="h1"/> IN <get var="lista_mdi_m"/></srai></set>
+            <set var="comprueba_hora"><srai>FINDITEM <get name="h1"/> IN <get name="lm_o"/></srai></set>
+
+            <condition var="comprueba_hora">
+              <li value='0'>
+                <set var="avanza_hora"><srai>PLUS <get var="hora_p"/> 1</srai></set>
+                <set var="hora_p"><get var="avanza_hora"/></set>
+                <set var="hora_cmp"><srai>SELECTITEM <get var="avanza_hora"/> IN <get var="lista_mdi_m"/></srai></set>
+                <set var="comprueba_hora"><srai>FINDITEM <get var="hora_cmp"/> IN <get name="lm_o"/></srai></set>
+                <condition var="hora_cmp">
+                  <li value="$">
+                    <set var="comprueba_hora">80</set> <!-- Para salir del loop -->
+                  </li>
+                </condition>
+                <loop/>
+              </li>
+            </condition>
+
+            <set var="nh"><srai>SELECTITEM <get var="comprueba_hora"/> IN <get name="lm_o"/></srai></set>
+            <set var="mssj">De acuero, le apunto para las <get var="nh"/></set>
+
+            <condition var="comprueba_hora"> <!-- Caso en el que están todas las horas ocupadas desde la solicitada -->
+              <li value='80'>
+                <set var="nh"><get name="h1"/></set>
+                <set var="mssj">No quedan horas disponibles por la mañana, desea otro día?</set>
+              </li>
+            </condition>
+          </li>
+          <!-- Tarde -->
+          <li value="t">
+            <set var="hora_p"><srai>FINDITEM <get name="h1"/> IN <get var="lista_mdi_t"/></srai></set>
+            <set var="comprueba_hora"><srai>FINDITEM <get name="h1"/> IN <get name="lt_o"/></srai></set>
+
+            <condition var="comprueba_hora">
+              <li value='0'>
+                <set var="avanza_hora"><srai>PLUS <get var="hora_p"/> 1</srai></set>
+                <set var="hora_p"><get var="avanza_hora"/></set>
+                <set var="hora_cmp"><srai>SELECTITEM <get var="avanza_hora"/> IN <get var="lista_mdi_t"/></srai></set>
+                <set var="comprueba_hora"><srai>FINDITEM <get var="hora_cmp"/> IN <get name="lt_o"/></srai></set>
+                <condition var="hora_cmp">
+                  <li value="$">
+                    <set var="comprueba_hora">80</set> <!-- Para salir del loop -->
+                  </li>
+                </condition>
+                <loop/>
+              </li>
+            </condition>
+
+            <set var="nh"><srai>SELECTITEM <get var="comprueba_hora"/> IN <get name="lt_o"/></srai></set>
+            <set var="mssj">De acuero, le apunto para las <get var="nh"/></set>
+
+            <condition var="comprueba_hora"> <!-- Caso en el que están todas las horas ocupadas desde la solicitada -->
+              <li value='80'>
+                <set var="nh"><get name="h1"/></set>
+                <set var="mssj">No quedan horas disponibles por la tarde, desea otro día?</set>
+              </li>
+            </condition>
+          </li>
+        </condition>
+      </think>
+
+    <!-- Mensaje final -->
+    <get var="mssj"/>
+    <srai>
+      MARK ocupado AT <get var="nh"/> ON <get name="fecha"/>
+    </srai>
+  </template>
+</category>
+
+<!-- Reglas para las horas de la mañana y de la tarde por separado -->
+<!-- Mañana -->
+<category>
+  <pattern>MAÑANA</pattern>
+  <template>
+    <think>
+      <set name="franja">m</set> <!-- Variable de comprobación para "Me da igual" -->
+      <!-- Mismo cómputo que en la regla principal pero adaptado -->
+      <set name="lm">x</set>
+      <set name="lm_o">x</set>
+
+      <get name="lista_mañana"/>
+      <set var="im"><srai>ITERATE <get name="lista_mañana"/></srai></set>
+
+      <condition var="im">
+        <li value="ocupado">
+          <set var="im"><srai>NEXT</srai></set>
+          <loop/>
+        </li>
+
+        <li value="null">
+          <set var="d"><srai>FINDITEM <get var="im"/> IN <get name="lista_mañana"/></srai></set>
+          <set var="d2"><srai>SELECTITEM <get var="d"/> IN <get name="lh_o2"/></srai></set>
+          <set name="lm"><srai>ADDITEM <map name="horas"><get var="d"/></map>:00 IN <get name="lm"/></srai></set>
+          <set var="im"><srai>NEXT</srai></set>
+          <set name="lista_mañana">
+            <srai>
+              MODIFY POSITION <get var="d"/> OF <get name="lista_mañana"/> WITH comprobado
+            </srai>
+          </set>
+          <loop/>
+        </li>
+      </condition>
+      <!-- Ordenación -->
+      <set var="i">
+        <srai>ITERATE <get name="lm"/></srai>
+      </set>
+
+      <condition var="i">
+        <li value="x">
+          <set var="i"><srai>NEXT</srai></set>
+        </li>
+
+        <li>
+            <set name="lm_o">
+              <srai>ADDITEM <get var="i"/> IN <get name="lm_o"/></srai>
+            </set>
+            <set var="i"><srai>NEXT</srai></set>
+          <loop/>
+        </li>
+      </condition>
+      <!-- Elimino la x y copio la lista, tal y como en la regla principal -->
+      <set var="nox">
+        <srai>FINDITEM x IN <get name="lm_o"/></srai>
+      </set>
+      <set name="lm_o">
+        <srai>REMOVEITEM <get var="nox"/> IN <get name="lm_o"/></srai>
+      </set>
+      <set var="tam_lm_o"><srai>COUNT <get name="lm_o"/></srai></set>
+      <set name="lm_o">
+        <srai>SUBLIST FROM 1 TO <get var="tam_lm_o"/> OF <get name="lm_o"/></srai>
+      </set>
+    </think>
+
+    Horas disponibles por la mañana:
+    <get name="lm_o"/>
+    A qué hora le apunto?
+  </template>
+</category>
+<!-- Tarde -->
+<category>
+  <pattern>TARDE</pattern>
+  <template>
+    <think>
+      <set name="franja">t</set> <!-- Variable de comprobación para "Me da igual" -->
+      <!-- Mismo cómputo que en la regla principal pero adaptado -->
+      <set name="lt">x</set>
+      <set name="lt_o">x</set>
+
+      <get name="lista_tarde"/>
+      <set var="it"><srai>ITERATE <get name="lista_tarde"/></srai></set>
+
+      <condition var="it">
+        <li value="ocupado">
+          <set var="it"><srai>NEXT</srai></set>
+          <loop/>
+        </li>
+
+        <li value="null">
+          <set var="d"><srai>FINDITEM <get var="it"/> IN <get name="lista_tarde"/></srai></set>
+          <set var="suma"><srai>SUMA <get var="d"/> 5</srai></set> <!-- Para empezar en las 13:00 -->
+          <set var="d2"><srai>SELECTITEM <get var="suma"/> IN <get name="lh_o2"/></srai></set>
+          <set name="lt"><srai>ADDITEM <map name="horas"><get var="suma"/></map>:00 IN <get name="lt"/></srai></set>
+          <set var="it"><srai>NEXT</srai></set>
+          <set name="lista_tarde">
+            <srai>
+              MODIFY POSITION <get var="d"/> OF <get name="lista_tarde"/> WITH comprobado
+            </srai>
+          </set>
+          <loop/>
+        </li>
+      </condition>
+      <!-- Ordenación -->
+      <set var="i">
+        <srai>ITERATE <get name="lt"/></srai>
+      </set>
+
+      <condition var="i">
+        <li value="x">
+          <set var="i"><srai>NEXT</srai></set>
+        </li>
+
+        <li>
+            <set name="lt_o">
+              <srai>ADDITEM <get var="i"/> IN <get name="lt_o"/></srai>
+            </set>
+            <set var="i"><srai>NEXT</srai></set>
+          <loop/>
+        </li>
+      </condition>
+      <!-- Elimino la x y copio la lista, tal y como en la regla principal -->
+      <set var="nox">
+        <srai>FINDITEM x IN <get name="lt_o"/></srai>
+      </set>
+      <set name="lt_o">
+        <srai>REMOVEITEM <get var="nox"/> IN <get name="lt_o"/></srai>
+      </set>
+      <set var="tam_lt_o"><srai>COUNT <get name="lt_o"/></srai></set>
+      <set name="lt_o">
+        <srai>SUBLIST FROM 1 TO <get var="tam_lt_o"/> OF <get name="lt_o"/></srai>
+      </set>
+    </think>
+
+    Horas disponibles por la tarde:
+    <get name="lt_o"/>
+    A qué hora le apunto?
+  </template>
+</category>
+
+<!-- LLamada a las funciones MAÑANA y TARDE -->
+<!-- MAÑANA -->
+<category>
+  <pattern>^ (a) (por) la mañana</pattern>
+  <template><srai>MAÑANA</srai></template>
+</category>
+<!-- TARDE -->
+<category>
+  <pattern>^ (a) (por) la tarde</pattern>
+  <template><srai>TARDE</srai></template>
+</category>
+
+</aiml>

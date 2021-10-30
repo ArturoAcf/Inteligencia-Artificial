@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+<!-- Práctica 1 EXTRA "entrevista" agente conversacional -->
+<!-- Realizado por Arturo Alonso Carbonero. DNI: 75936665-A -->
+<!-- Grupo 2ºA - A2 -->
+
+<!--
+NOTAS:
+-En el map de eventos he cambiado algunas de las posiciones de determinados días para poder realizar pruebas.
+-En determinados casos tarda varios segundos en responder. En cualquier caso oscila entre <1 segundos y <=3 segundos (En el peor de los casos, solo sucedió en una ocsión).
+-Contempla todas las posibilidades que se piden.
+-->
+
+<!-- 2.3 Consultas sobre calendario con especificación de fechas elaborada -->
+<!-- Nivel 2 -->
+
+<category>
+  <!-- Cita hoy/mañana/pasado mañana -->
+  <pattern>CITA *</pattern>
+  <template>
+    <think>
+      <set name="dia"><star/></set>
+      <condition name="dia">
+        <!-- Valor que toman las variables si "dia" vale 'hoy' -->
+        <li value="hoy">
+          <set name="dia"><srai>DATE</srai></set>
+          <set name="mes"><srai>MONTH</srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set> <!-- Utilizo diaV y un map nuevo ya, en date, los días de un dígito comienzan por 0 -->
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+        <!-- Valor que toman las variables si "dia" vale 'mañana' -->
+        <li value="mañana">
+          <set name="dia"><srai>DATE TOMORROW</srai></set>
+          <set name="mes"><srai>SELECTITEM 2 IN <get name="dia"/></srai></set> <!-- Por si mañana es del mes siguiente -->
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+        <!-- Valor que toman las variables si "dia" vale 'pasado mañana' -->
+        <li value="pasado mañana">
+          <set name="dia"><srai>DATE IN 2 DAYS</srai></set>
+          <set name="mes"><srai>SELECTITEM 2 IN <get name="dia"/></srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+      </condition>
+    </think>
+    <!-- Llamo a la función del nivel 1 -->
+    <srai>LIBRE EL <get name="diaV"/> DE <get name="mes"/></srai>
+  </template>
+</category>
+
+<!-- Repito la mecánica anterior pero distinguiendo entre mañana y tarde -->
+<category>
+  <pattern>CITA * POR LA *</pattern>
+  <template>
+    <think>
+      <set name="dia"><star/></set>
+      <condition name="dia">
+        <li value="hoy">
+          <set name="dia"><srai>DATE</srai></set>
+          <set name="mes"><srai>MONTH</srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+
+        <li value="mañana">
+          <set name="dia"><srai>DATE TOMORROW</srai></set>
+          <set name="mes"><srai>SELECTITEM 2 IN <get name="dia"/></srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+
+        <li value="pasado mañana">
+          <set name="dia"><srai>DATE IN 2 DAYS</srai></set>
+          <set name="mes"><srai>SELECTITEM 2 IN <get name="dia"/></srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+      </condition>
+    </think>
+
+    <think>
+      <srai>LIBRE EL <get name="diaV"/> DE <get name="mes"/></srai>
+    </think>
+
+    <think>
+      <set var="mañana-tarde"><star index="2"/></set>
+    </think>
+    <!-- Llamo a las funciones del nivel 1 según si se solicita por la mañana o por la tarde -->
+    <condition var="mañana-tarde">
+      <li value="mañana">
+        <srai>MAÑANA</srai>
+      </li>
+
+      <li value="tarde">
+        <srai>TARDE</srai>
+      </li>
+    </condition>
+  </template>
+</category>
+
+<!-- Siguiente o próximo (día de la semana) asumiendo que ambas opciones son en si equivalentes (Ya que si, por ejemplo, hoy es jueves, el próximo viernes es mañana y el siguiente viernes también) -->
+<!-- En caso de que me equivoque y con 'siguiente' se refiera a dentro de dos semanas, bastaría con sumar 7 días más en cualquier caso -->
+<category>
+  <pattern>CITA EL *</pattern>
+  <template>
+    <think>
+      <set var="diasem"><star/></set> <!-- Día deseado -->
+      <set var="diactual"><srai>DAY</srai></set> <!-- Día de hoy -->
+      <set var="hasta"><srai>DAYS UNTIL <get var="diasem"/></srai></set> <!-- Días desde hoy hasta el día deseado -->
+      <!-- En caso de que el día deseado y el día actual coincidan, busca la fecha dentro de 7 días. Sin el condicional, 'hasta' vale 0 en ese caso -->
+      <condition var="diasem">
+        <li><value><get var="diactual"/></value>
+          <set var="hasta">7</set>
+        </li>
+      </condition>
+
+      <set var="fecha_proxsig"><srai>DATE IN <get var="hasta"/> DAYS</srai></set>
+      <set name="mes"><srai>SELECTITEM 2 IN <get var="fecha_proxsig"/></srai></set>
+      <set var="numero_dia"><srai>TOP <get var="fecha_proxsig"/></srai></set>
+      <set name="diaV"><map name="diasNvl2"><get var="numero_dia"/></map></set>
+    </think>
+
+    <srai>LIBRE EL <get name="diaV"/> DE <get name="mes"/></srai>
+  </template>
+</category>
+
+<!-- Repito la mecánica anterior pero distinquiendo entre mañana y tarde -->
+<category>
+  <pattern>CITA EL * POR LA *</pattern>
+  <template>
+    <think>
+      <set var="diasem"><star/></set> <!-- Día deseado -->
+      <set var="diactual"><srai>DAY</srai></set> <!-- Día de hoy -->
+      <set var="hasta"><srai>DAYS UNTIL <get var="diasem"/></srai></set> <!-- Días desde hoy hasta el día deseado -->
+      <!-- En caso de que el día deseado y el día actual coincidan, busca la fecha dentro de 7 días. Sin el condicional, 'hasta' vale 0 en ese caso -->
+      <condition var="diasem">
+        <li><value><get var="diactual"/></value>
+          <set var="hasta">7</set>
+        </li>
+      </condition>
+
+      <set var="fecha_proxsig"><srai>DATE IN <get var="hasta"/> DAYS</srai></set>
+      <set name="mes"><srai>SELECTITEM 2 IN <get var="fecha_proxsig"/></srai></set>
+      <set var="numero_dia"><srai>TOP <get var="fecha_proxsig"/></srai></set>
+      <set name="diaV"><map name="diasNvl2"><get var="numero_dia"/></map></set>
+    </think>
+
+    <think>
+      <srai>LIBRE EL <get name="diaV"/> DE <get name="mes"/></srai>
+    </think>
+
+    <think>
+      <set var="mañana-tarde"><star index="2"/></set>
+    </think>
+    <!-- Llamo a las funciones del nivel 1 según si se solicita por la mañana o por la tarde -->
+    <condition var="mañana-tarde">
+      <li value="mañana">
+        <srai>MAÑANA</srai>
+      </li>
+
+      <li value="tarde">
+        <srai>TARDE</srai>
+      </li>
+    </condition>
+  </template>
+</category>
+
+<!-- A partir de xx:00 hora -->
+<category>
+  <pattern>CITA * A PARTIR DE LAS *</pattern>
+  <template>
+    <!-- Copio el cómputo de la regla "CITA *" -->
+    <!-- NOTA: Si únicamente llamo a "CITA *" no funciona correctamente -->
+    <think>
+      <set name="dia"><star/></set>
+      <condition name="dia">
+        <!-- Valor que toman las variables si "dia" vale 'hoy' -->
+        <li value="hoy">
+          <set name="dia"><srai>DATE</srai></set>
+          <set name="mes"><srai>MONTH</srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set> <!-- Utilizo diaV y un map nuevo ya, en date, los días de un dígito comienzan por 0 -->
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+        <!-- Valor que toman las variables si "dia" vale 'mañana' -->
+        <li value="mañana">
+          <set name="dia"><srai>DATE TOMORROW</srai></set>
+          <set name="mes"><srai>SELECTITEM 2 IN <get name="dia"/></srai></set> <!-- Por si mañana es del mes siguiente -->
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+        <!-- Valor que toman las variables si "dia" vale 'pasado mañana' -->
+        <li value="pasado mañana">
+          <set name="dia"><srai>DATE IN 2 DAYS</srai></set>
+          <set name="mes"><srai>SELECTITEM 2 IN <get name="dia"/></srai></set>
+          <set name="num_dia"><srai>TOP <get name="dia"/></srai></set>
+          <set name="diaV"><map name="diasNvl2"><get name="num_dia"/></map></set>
+          <set name="año"><srai>SELECTITEM 3 IN <get name="dia"/></srai></set>
+        </li>
+      </condition>
+    </think>
+
+    <think>
+      <srai>LIBRE EL <get name="diaV"/> DE <get name="mes"/></srai> <!-- para poder hacer uso de la ista de horas del día -->
+      <get name="lh_o2"/>
+    </think>
+
+    <!-- Para obtener las horas a partir de la deseada -->
+    <think>
+      <set var="hora_inicial"><map name="numerodias"><star index="2"/></map>:00</set> <!-- "numerodias" -> map para pasar de 8 a 08 (por ejemplo) -->
+      <set var="hora_inicial_pos"><srai>FINDITEM <get var="hora_inicial"/> IN <get name="lh_o2"/></srai></set> <!-- Busco en la lista de horas -->
+      <set var="hora_suma"><star index="2"/></set> <!-- Variable para ir aumentando el valor de la hora en caso de que no esté disponible la indicada por el usuario -->
+
+      <!-- De esta forma, si el usuario solicita a partir de una hora que no está disponible, mostrará la primera disponible después de ella hasta el final -->
+      <condition var="hora_inicial_pos">
+        <li value="0">
+          <set var="nueva_hora"><srai>PLUS <get var="hora_suma"/> 1</srai></set>
+          <set var="hora_inicial"><map name="numerodias"><get var="nueva_hora"/></map>:00</set>
+          <set var="hora_inicial_pos"><srai>FINDITEM <get var="hora_inicial"/> IN <get name="lh_o2"/></srai></set>
+          <set var="hora_suma"><get var="nueva_hora"/></set>
+          <loop/> <!-- Repito la operación hasta que hallo una hora disponible de la cual partir -->
+        </li>
+      </condition>
+
+      <!-- Sublista de las horas que están disponibles desde la indicada hasta el final -->
+      <set var="tamaño_lista"><srai>COUNT <get name="lh_o2"/></srai></set>
+      <set var="lista_final"><srai>SUBLIST FROM <get var="hora_inicial_pos"/> TO <get var="tamaño_lista"/> OF <get name="lh_o2"/></srai></set>
+      <set var="mnsj">A qué hora le apunto?</set>
+    </think>
+
+    Horas disponibles a partir de las <star index="2"/>:
+    <get var="lista_final"/>
+    <get var="mnsj"/>
+  </template>
+</category>
+
+<!-- El próximo/siguiente día a partir de xx:00 hora -->
+<category>
+  <pattern>CITA EL * A PARTIR DE LAS *</pattern>
+  <template>
+    <!-- Copio el cómputo de la regla "CITA EL *" -->
+    <think>
+      <set var="diasem"><star/></set> <!-- Día deseado -->
+      <set var="diactual"><srai>DAY</srai></set> <!-- Día de hoy -->
+      <set var="hasta"><srai>DAYS UNTIL <get var="diasem"/></srai></set> <!-- Días desde hoy hasta el día deseado -->
+      <!-- En caso de que el día deseado y el día actual coincidan, busca la fecha dentro de 7 días. Sin el condicional, 'hasta' vale 0 en ese caso -->
+      <condition var="diasem">
+        <li><value><get var="diactual"/></value>
+          <set var="hasta">7</set>
+        </li>
+      </condition>
+
+      <set var="fecha_proxsig"><srai>DATE IN <get var="hasta"/> DAYS</srai></set>
+      <set name="mes"><srai>SELECTITEM 2 IN <get var="fecha_proxsig"/></srai></set>
+      <set var="numero_dia"><srai>TOP <get var="fecha_proxsig"/></srai></set>
+      <set name="diaV"><map name="diasNvl2"><get var="numero_dia"/></map></set>
+    </think>
+
+    <think>
+      <srai>LIBRE EL <get name="diaV"/> DE <get name="mes"/></srai>
+    </think>
+
+    <!-- Para obtener las horas a partir de la deseada (Igual que en la regla anterior) -->
+    <think>
+      <set var="hora_inicial"><map name="numerodias"><star index="2"/></map>:00</set> <!-- "numerodias" -> map para pasar de 8 a 08 (por ejemplo) -->
+      <set var="hora_inicial_pos"><srai>FINDITEM <get var="hora_inicial"/> IN <get name="lh_o2"/></srai></set> <!-- Busco en la lista de horas -->
+      <set var="hora_suma"><star index="2"/></set> <!-- Variable para ir aumentando el valor de la hora en caso de que no esté disponible la indicada por el usuario -->
+
+      <!-- De esta forma, si el usuario solicita a partir de una hora que no está disponible, mostrará la primera disponible después de ella hasta el final -->
+      <condition var="hora_inicial_pos">
+        <li value="0">
+          <set var="nueva_hora"><srai>PLUS <get var="hora_suma"/> 1</srai></set>
+          <set var="hora_inicial"><map name="numerodias"><get var="nueva_hora"/></map>:00</set>
+          <set var="hora_inicial_pos"><srai>FINDITEM <get var="hora_inicial"/> IN <get name="lh_o2"/></srai></set>
+          <set var="hora_suma"><get var="nueva_hora"/></set>
+          <loop/> <!-- Repito la operación hasta que hallo una hora disponible de la cual partir -->
+        </li>
+      </condition>
+
+      <!-- Sublista de las horas que están disponibles desde la indicada hasta el final -->
+      <set var="tamaño_lista"><srai>COUNT <get name="lh_o2"/></srai></set>
+      <set var="lista_final"><srai>SUBLIST FROM <get var="hora_inicial_pos"/> TO <get var="tamaño_lista"/> OF <get name="lh_o2"/></srai></set>
+      <set var="mnsj">A qué hora le apunto?</set>
+    </think>
+
+    Horas disponibles a partir de las <star index="2"/>:
+    <get var="lista_final"/>
+    <get var="mnsj"/>
+  </template>
+</category>
+
+<!-- Cita en una fecha concreta por la mañana/tarde -->
+<category>
+  <pattern>CITA EL * DE * POR LA *</pattern>
+  <template>
+    <think>
+      <srai>LIBRE EL <star/> DE <star index="2"/></srai>
+    </think>
+
+    <think>
+      <set var="mañana-tarde"><star index="3"/></set>
+    </think>
+    <!-- Llamo a las funciones del nivel 1 según si se solicita por la mañana o por la tarde -->
+    <condition var="mañana-tarde">
+      <li value="mañana">
+        <srai>MAÑANA</srai>
+      </li>
+
+      <li value="tarde">
+        <srai>TARDE</srai>
+      </li>
+    </condition>
+  </template>
+</category>
+
+<!-- Cita en una fecha concreta a partir de cierta hora -->
+<category>
+  <pattern>CITA EL * DE * A PARTIR DE LAS *</pattern>
+  <template>
+    <think>
+      <srai>LIBRE EL <star/> DE <star index="2"/></srai> <!-- para poder hacer uso de la ista de horas del día -->
+      <get name="lh_o2"/>
+    </think>
+
+    <!-- Para obtener las horas a partir de la deseada -->
+    <think>
+      <set var="hora_inicial"><map name="numerodias"><star index="3"/></map>:00</set> <!-- "numerodias" -> map para pasar de 8 a 08 (por ejemplo) -->
+      <set var="hora_inicial_pos"><srai>FINDITEM <get var="hora_inicial"/> IN <get name="lh_o2"/></srai></set> <!-- Busco en la lista de horas -->
+      <set var="hora_suma"><star index="3"/></set> <!-- Variable para ir aumentando el valor de la hora en caso de que no esté disponible la indicada por el usuario -->
+
+      <!-- De esta forma, si el usuario solicita a partir de una hora que no está disponible, mostrará la primera disponible después de ella hasta el final -->
+      <condition var="hora_inicial_pos">
+        <li value="0">
+          <set var="nueva_hora"><srai>PLUS <get var="hora_suma"/> 1</srai></set>
+          <set var="hora_inicial"><map name="numerodias"><get var="nueva_hora"/></map>:00</set>
+          <set var="hora_inicial_pos"><srai>FINDITEM <get var="hora_inicial"/> IN <get name="lh_o2"/></srai></set>
+          <set var="hora_suma"><get var="nueva_hora"/></set>
+          <loop/> <!-- Repito la operación hasta que hallo una hora disponible de la cual partir -->
+        </li>
+      </condition>
+
+      <!-- Sublista de las horas que están disponibles desde la indicada hasta el final -->
+      <set var="tamaño_lista"><srai>COUNT <get name="lh_o2"/></srai></set>
+      <set var="lista_final"><srai>SUBLIST FROM <get var="hora_inicial_pos"/> TO <get var="tamaño_lista"/> OF <get name="lh_o2"/></srai></set>
+      <set var="mnsj">A qué hora le apunto?</set>
+    </think>
+
+    Horas disponibles a partir de las <star index="3"/>:
+    <get var="lista_final"/>
+    <get var="mnsj"/>
+  </template>
+</category>
+
+<!-- Reglas para llamar a las funciones -->
+<!-- Cita hoy/mañana/pasado mañana -->
+<category>
+  <pattern>^ cita *</pattern>
+  <template>
+    <srai>CITA <star index="2"/></srai>
+  </template>
+</category>
+<!-- Cita hoy/mañana/pasado mañana por la mañana/tarde-->
+<category>
+  <pattern>^ cita * por la *</pattern>
+  <template>
+    <srai>CITA <star index="2"/> POR LA <star index="3"/></srai>
+  </template>
+</category>
+<!-- Cita el próximo/siguiente día de la semana -->
+<category>
+  <pattern>^ cita el [proximo siguiente] *</pattern>
+  <template>
+    <srai>CITA EL <star index="2"/></srai>
+  </template>
+</category>
+<!-- Cita el próximo/siguiente día de la semana por la mañana/tarde -->
+<category>
+  <pattern>^ cita el [proximo siguiente] * por la *</pattern>
+  <template>
+    <srai>CITA EL <star index="2"/> POR LA <star index="3"/></srai>
+  </template>
+</category>
+<!-- Cita hoy/mañana/pasado mañana a partir de cierta hora -->
+<category>
+  <pattern>^ cita * a partir de las *</pattern>
+  <template>
+    <srai>CITA <star index="2"/> A PARTIR DE LAS <star index="3"/></srai>
+  </template>
+</category>
+<!-- Cita el próximo/siguiente día de la semana a partir de cierta hora -->
+<category>
+  <pattern>^ cita el [proximo siguiente] * a partir de las *</pattern>
+  <template>
+    <srai>CITA EL <star index="2"/> A PARTIR DE LAS <star index="3"/></srai>
+  </template>
+</category>
+<!-- Cita un día concreto por la mañana/tarde (Para pedir cita únicamente el día concreto se escribe y se emplea la regla del nivel 1) -->
+<category>
+  <pattern>^ cita el * de * por la *</pattern>
+  <template>
+    <srai>CITA EL <star index="2"/> DE <star index="3"/> POR LA <star index="4"/></srai>
+  </template>
+</category>
+<!-- Cita un día concreto a partir de cierta hora -->
+<category>
+  <pattern>^ cita el * de * a partir de las *</pattern>
+  <template>
+    <srai>CITA EL <star index="2"/> DE <star index="3"/> A PARTIR DE LAS <star index="4"/></srai>
+  </template>
+</category>
+
+</aiml>

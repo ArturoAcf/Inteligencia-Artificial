@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+
+<!-- segunda regla -->
+<category>
+  <pattern>^ aprobar ^</pattern>
+  <template>jaja mira nomas don comedia traigan las sillas</template>
+</category>
+
+<!-- COMODINES -->
+<category> <!-- La primera tiene mayor prioridad se se le pasa le entrada exacta -->
+  <pattern>Hola #</pattern> <!-- #>_>exacta>^>* --> <!-- Poner $ al principio le da prioridad -->
+  <template>Hola, buenos días</template>
+</category>
+
+<category>
+  <pattern>Me llamo * y estudio en *</pattern>
+  <template>Hola <star/>, yo tambien estudio en <star index="2"/> </template>
+</category>
+
+<!-- VARIABLES -->
+<!-- Si en lugar de name ponemos var esto es una varibale local -->
+
+<category>
+  <pattern>Cual es tu hobbie</pattern>
+  <template>me gusta GANAR al <bot name="hobbie"/> </template>
+</category>
+
+<category>
+  <pattern>como me llamo</pattern>
+  <template>ud se llama <get name="x" />, vamos que ni idea crack</template>
+</category>
+
+<category>
+  <pattern>me llamo *</pattern>
+  <template>
+    <think><set name="x"><star/></set></think>
+    Te llamas <get name="x"/> pero nadie te pregunto igual grax por la info que no le impotrta a nadie
+  </template>
+</category>
+<!-- Esto es como para poner normas que lleven a la misma respuesta -->
+<category>
+  <pattern>* mi nombre</pattern>
+  <template><srai>COMO ME LLAMO</srai></template>
+</category>
+
+<category>
+  <pattern>^ como me llamo</pattern>
+  <template><srai>COMO ME LLAMO</srai></template>
+</category>
+<!-- Sets y Maps -->
+<category>
+  <pattern>Es <set>weekday</set> un dia</pattern>
+  <template>si, <star/> es un dia</template>
+</category>
+<!-- Set tiene mayor prioridad que * y ^ pero menos que _ y # -->
+<!-- Es decir, si pongo # en vez de *, no lee el set -->
+<category>
+  <pattern>Es * un dia</pattern>
+  <template>no, <star/> no es un dia</template>
+</category>
+<!-- Aquí podría poner un set en vez de * -->
+<category>
+  <pattern>Cual es la capital de *</pattern>
+  <template>La capital de <star/> es <map name="capitales"><star/></map></template>
+</category>
+<!-- Soy un genio -->
+<category>
+  <pattern>y la de *</pattern>
+  <template><srai>CUAL ES LA CAPITAL DE <star/></srai></template>
+</category>
+
+</aiml>

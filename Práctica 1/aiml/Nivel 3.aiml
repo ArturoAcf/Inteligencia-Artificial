@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aiml version="2.0">
+<!-- Práctica 1 EXTRA "entrevista" agente conversacional -->
+<!-- Realizado por Arturo Alonso Carbonero. DNI: 75936665-A -->
+<!-- Grupo 2ºA - A2 -->
+
+<!-- 2.4 Consultas sobre calendario con especificación de fechas mediante semanas -->
+<!-- Nivel 3 -->
+
+<!--
+NOTA:
+Cuando llamo a la función del nivel 1 (línea 57) más de dos veces colapsa. Desconozco si se debe a la maquina virtual o a que
+el programa entre en un bucle de algún tipo. El caso es que cuando realizo llamadas en una regla aparte, en bloques de códigos
+distintos para cada día o en el bucle actual sigue dando el mismo fallo.
+Esta regla calcularía una lista de los días del mes entre los indicados, así como el día de la semana.
+Además, si no hay horas en un día, lo eliminaría de la lista de disponibles. No he sido capaz de hallar el error debido
+a la escasa cantidad de tiempo de la que he dispuesto, pero no mes estoy excusando, únicamente quiero hacerle conocedor del error
+por si en su máquina no ocurre, o por si usted es capaz de visualizarlo.
+-->
+
+<!-- Tarea 1 -->
+<category>
+  <pattern>CITA DEL * DE * AL * DE *</pattern>
+  <template>
+    <think>
+      <set var="comprobar_lunes"><star/><star index="2"/><srai>YEAR</srai></set>
+      <set var="esLunes"><map name="todosLosLunes"><get var="comprobar_lunes"/></map></set>
+      <set var="comprobar_viernes"><star index="3"/><star index="4"/><srai>YEAR</srai></set>
+      <set var="esViernes"><map name="todosLosViernes"><get var="comprobar_viernes"/></map></set>
+      <!-- El map "todosLosLunes" contiene todos los lunes desde el 29 de junio hasta final de 2020 con el formato de la variable "comprobar_dia". Ídem para los viernes -->
+      <set var="diaDeHoy"><star/></set>
+      <set var="mesDeHoy"><star index="2"/></set>
+      <set var="setDia">1</set>
+
+      <condition var="esLunes">
+        <li value="unknown">
+          <set var="ListaDeDias"><srai>REMOVE <get var="tam_ListaDeDias"/> FIRST ELEMENTS FROM <get var="ListaDeDias"/></srai></set>
+          <set var="mens">O el primer día introducido no es lunes o el segundo no es viernes</set>
+        </li>
+        <li>
+          <condition var="esViernes">
+            <li value="unknown">
+              <set var="ListaDeDias"><srai>REMOVE <get var="tam_ListaDeDias"/> FIRST ELEMENTS FROM <get var="ListaDeDias"/></srai></set>
+              <set var="mens">O el primer día introducido no es lunes o el segundo no es viernes</set>
+            </li>
+            <li>
+            <set name="iteracion">a b c d e x</set>
+            <set var="j"><srai>ITERATE <get name="iteracion"/></srai></set>
+              <condition var="j">
+                <li value="x">
+                  <set var="mens">Estos son los días disponibles de esa semana: </set>
+                </li>
+                <li>
+                    <set var="getDia"><map name="dias"><get var="setDia"/></map></set> <!-- Map para ir aumentando el día -->
+                    <set var="lista_dias"><srai>ADDITEM <get var="diaDeHoy"/> IN <get var="lista_dias"/></srai></set>
+                    <set var="ListaDeDias"><srai>ADDITEM <get var="getDia"/> IN <get var="ListaDeDias"/></srai></set> <!-- Añado el día a la lista de días disponibles -->
+<!-- Llamada que proboca el error --><srai>LIBRE EL <get var="diaDeHoy"/> DE <get var="mesDeHoy"/></srai>
+
+                    <set name="lista_del_dia"><get name="lh_o2"/></set>
+                    <set var="tl"><srai>COUNT <get name="lista_del_dia"/></srai></set>
+                    <set var="tam_ListaDeDias"><srai>COUNT <get var="ListaDeDias"/></srai></set>
+                    <set var="ultimo_dia"><srai>TOP <get var="ListaDeDias"/></srai></set> <!-- Ya que el día actual se encuentra siemrre en la primera posición de la lista -->
+
+                    <condition var="tl"> <!-- Borro el día correspondiente en caso de que la lista de horas esté vacía, esto es, si el día no está disponible -->
+                      <li value='1'>
+                        <set var="ListaDeDias"><srai>REMOVE 1 FIRST ELEMENTS FROM <get var="ListaDeDias"/></srai></set>
+                      </li>
+                    </condition>
+
+                    <!-- Obtengo el día siguiente y la fecha, ya que el mes puede cambiar -->
+                    <set var="fechaDeMañana"><srai>TOMORROWDATE <get var="diaDeHoy"/> <get var="mesDeHoy"/> 2020</srai></set>
+                    <set var="diaDeHoy"><srai>SELECTITEM 1 IN <get var="fechaDeMañana"/></srai></set>
+                    <set var="mesDeHoy"><srai>SELECTITEM 2 IN <get var="fechaDeMañana"/></srai></set>
+                    <set var="setDia"><srai>PLUS <get var="setDia"/> 1</srai></set> <!-- Para iterar en el map "dias" -->
+                    <set var="j"><srai>NEXT</srai></set>
+                  <loop/>
+                </li>
+              </condition>
+
+              <!-- Ordeno las listas de los días, los meses y los días de la semana disponibles y elimino el elemento extra -->
+              <!-- Lista con los números de cada día desde el incial al final -->
+              <set var="i_diasMes"><srai>ITERATE <get var="lista_dias"/></srai></set>
+              <condition var="i_diasMes">
+                <li value="unknown">
+                  <set var="i_diasMes"><srai>NEXT</srai></set>
+                </li>
+                <li>
+                  <set var="lista_dias_o"><srai>ADDITEM <get var="i_diasMes"/> IN <get var="lista_dias_o"/></srai></set>
+                  <set var="i_diasMes"><srai>NEXT</srai></set>
+                  <loop/>
+                </li>
+              </condition>
+                <set var="tam_ldo"><srai>COUNT <get var="lista_dias_o"/></srai></set>
+                <set var="lista_dias_o"><srai>REMOVEITEM <get var="tam_ldo"/> IN <get var="lista_dias_o"/></srai></set>
+                <!-- literalmente copio la lista ya que al mostrarla lo hace con espacios amplios entre sus elementos -->
+                <set var="tam_ldo"><srai>COUNT <get var="lista_dias_o"/></srai></set>
+                <set var="lista_dias_o2"><srai>SUBLIST FROM 1 TO <get var="tam_ldo"/> OF <get var="lista_dias_o"/></srai></set>
+
+                <!-- Lista con todos los días de la semana -->
+                <set var="i_DiaSem"><srai>ITERATE <get var="ListaDeDias"/></srai></set>
+                <condition var="i_DiaSem">
+                  <li value="unknown">
+                    <set var="i_DiaSem"><srai>NEXT</srai></set>
+                  </li>
+                  <li>
+                    <set var="ListaDeDias_o"><srai>ADDITEM <get var="i_DiaSem"/> IN <get var="ListaDeDias_o"/></srai></set>
+                    <set var="i_DiaSem"><srai>NEXT</srai></set>
+                    <loop/>
+                  </li>
+                </condition>
+                  <set var="tam_ldso"><srai>COUNT <get var="ListaDeDias_o"/></srai></set>
+                  <set var="ListaDeDias_o"><srai>REMOVEITEM <get var="tam_ldso"/> IN <get var="ListaDeDias_o"/></srai></set>
+                  <!-- literalmente copio la lista ya que al mostrarla lo hace con espacios amplios entre sus elementos -->
+                  <set var="tam_ldso"><srai>COUNT <get var="ListaDeDias_o"/></srai></set>
+                  <set var="ListaDeDias_o2"><srai>SUBLIST FROM 1 TO <get var="tam_ldso"/> OF <get var="ListaDeDias_o"/></srai></set>
+
+            </li>
+          </condition>
+        </li>
+      </condition>
+    </think>
+
+    <get var="mens"/>
+    <get var="ListaDeDias"/>
+  </template>
+</category>
+
+<category>
+  <pattern>SEMANA QUE VIENE PROXIMA</pattern>
+  <template>
+    <think>
+      <!-- Obtengo datos del lunes -->
+      <set var="fecha_hoy"><srai>DATE</srai></set>
+      <set var="hastaElLunes"><srai>DAYS UNTIL lunes</srai></set>
+      <set var="fechaDelLunes"><srai>DATE IN <get var="hastaElLunes"/> DAYS</srai></set>
+      <set var="LunesQueViene"><sari>SELECTITEM 1 IN <get var="fechaDelLunes"/></srai></set>
+      <set var="MesDelLunes"><sari>SELECTITEM 2 IN <get var="fechaDelLunes"/></srai></set>
+      <!-- Obtengo datos del viernes del viernes -->
+      <set var="hastaElViernes"><srai>SUMA <get var="hastaElLunes"> 4</srai></set>
+      <set var="fechaDelViernes"><srai>DATE IN <get var="hastaElViernes"/> DAYS</srai></set>
+      <set var="ViernesQueViene"><sari>SELECTITEM 1 IN <get var="fechaDelViernes"/></srai></set>
+      <set var="MesDelViernes"><sari>SELECTITEM 2 IN <get var="fechaDelViernes"/></srai></set>
+    </think>
+      <!-- Llamo a la primera regla -->
+      <srai>CITA DEL <get var="LunesQueViene"/> DE <get var="MesDelLunes"/> AL <get var="ViernesQueViene"/> DE <get var="MesDelViernes"/></srai>
+  </template>
+</category>
+
+<category>
+  <pattern>ESTA SEMANA</pattern>
+  <template>
+    <think>
+      <set var="fecha_hoy"><srai>DATE</srai></set>
+      <set var="hasta"><srai>DAYS UNTIL viernes</srai></set>
+      <set var="fecha_viernes"><srai>DATE IN <get var="hasta"/> DAYS</srai></set>
+      <set var="DiaHoy"><sari>SELECTITEM 1 IN <get var="fecha_hoy"/></srai></set>
+      <set var="MesHoy"><sari>SELECTITEM 2 IN <get var="fecha_hoy"/></srai></set>
+      <set var="DiaViernes"><sari>SELECTITEM 1 IN <get var="fecha_viernes"/></srai></set>
+      <set var="MesViernes"><sari>SELECTITEM 2 IN <get var="fecha_viernes"/></srai></set>
+      <!-- Llamo a la primera regla -->
+      <srai></srai>
+      <srai>CITA DEL <get var="DiaHoy"/> DE <get var="MesHoy"/> AL <get var="DiaViernes"/> DE <get var="MesViernes"/></srai>
+    </think>
+</template>
+</category>
+
+<!-- Reglas para llamar a las funciones -->
+<category>
+  <pattern>^ cita para la semana del * de * al * de *</pattern>
+  <template>
+    <srai>CITA DEL <star index="2"/> DE <star index="3"/> AL <star index="4"/> DE <star index="5"/></srai>
+  </template>
+</category>
+<category>
+  <pattern>^ cita para la (proxima) semana (que viene)</pattern>
+  <template>
+    <srai>SEMANA QUE VIENE PROXIMA</srai>
+  </template>
+</category>
+<category>
+  <pattern>^ cita esta semana</pattern>
+  <template>
+    <srai>ESTA SEMANA</srai>
+  </template>
+</category>
+
+</aiml>
