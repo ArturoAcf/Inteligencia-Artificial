@@ -188,14 +188,13 @@ bool ComportamientoJugador::pathFinding_Profundidad(const estado &origen, const 
 }
 
 // Nombre: Arturo Alonso Carbonero
-// DNI: 75936665-A
 // Grupo: 2ÂºA - A2
 // NOTAS
 // -Al realizar pruebas por mi cuenta nunca se ha "colgado" tal y como debe
-// suceder según las indicaciones del guión, pero como desconozco qué puede 
-// probocar dicho comportamiento, no se si la realización de la P2E es correcta en 
-// relación a ese aspecto. 
-// Contempla Anchura, costo uniforme y A* (Además de lo proporcionado).
+// suceder segï¿½n las indicaciones del guiï¿½n, pero como desconozco quï¿½ puede
+// probocar dicho comportamiento, no se si la realizaciï¿½n de la P2E es correcta en
+// relaciï¿½n a ese aspecto.
+// Contempla Anchura, costo uniforme y A* (Ademï¿½s de lo proporcionado).
 /////////////////////
 //BÃšSQUEDA EN ANCHURA
 /////////////////////
