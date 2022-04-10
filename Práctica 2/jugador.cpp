@@ -191,10 +191,10 @@ bool ComportamientoJugador::pathFinding_Profundidad(const estado &origen, const 
 // Grupo: 2ºA - A2
 // NOTAS
 // -Al realizar pruebas por mi cuenta nunca se ha "colgado" tal y como debe
-// suceder seg�n las indicaciones del gui�n, pero como desconozco qu� puede
-// probocar dicho comportamiento, no se si la realizaci�n de la P2E es correcta en
-// relaci�n a ese aspecto.
-// Contempla Anchura, costo uniforme y A* (Adem�s de lo proporcionado).
+// suceder según las indicaciones del guion, pero como desconozco qué puede
+// probocar dicho comportamiento, no se si la realización de la P2E es correcta en
+// relación a ese aspecto.
+// Contempla Anchura, costo uniforme y A* (Además de lo proporcionado).
 /////////////////////
 //BÚSQUEDA EN ANCHURA
 /////////////////////
